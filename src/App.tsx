@@ -1,15 +1,12 @@
-import {
-  StyleSheet,
-  View,
-} from 'react-native';
+import { StyleSheet } from 'react-native';
 
-import { Map } from './components/Map';
+import { TabBar } from './components/Tab';
 
 export default function App() {
   return (
-    <View style={styles.container}>
-      <Map />
-    </View>
+    <>
+      <TabBar></TabBar>
+    </>
   );
 }
 
