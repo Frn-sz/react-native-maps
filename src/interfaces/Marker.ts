@@ -1,7 +1,8 @@
 export interface MarkerInfo {
   coordinate: Coordinate;
   title: string;
-  description: string;
+  description: string | undefined;
+  isFavorite?: boolean;
 }
 
 export interface Coordinate {

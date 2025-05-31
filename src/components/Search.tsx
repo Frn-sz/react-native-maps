@@ -1,10 +1,11 @@
-import React from 'react';
+import React, { useState } from 'react';
 
 import {
   FlatList,
   SafeAreaView,
   StyleSheet,
   Text,
+  TextInput,
   TouchableOpacity,
   View,
 } from 'react-native';
@@ -12,26 +13,51 @@ import Icon from 'react-native-vector-icons/Ionicons';
 
 import { MarkerInfo } from '../interfaces/Marker';
 
-interface FavoritesProps {
-  favoritePlaces: MarkerInfo[];
+interface SearchProps {
+  allPlaces: MarkerInfo[];
   onPlacePress: (place: MarkerInfo) => void;
-  onToggleFavorite: (placeId: string) => void;
 }
 
-export const Favorites = ({ favoritePlaces, onPlacePress, onToggleFavorite }: FavoritesProps) => {
+export const Search = ({ allPlaces, onPlacePress }: SearchProps) => {
+  const [searchText, setSearchText] = useState('');
+  const [filteredPlaces, setFilteredPlaces] = useState<MarkerInfo[]>([]);
+
+  const handleSearch = (text: string) => {
+    setSearchText(text);
+    if (text.trim() === '') {
+      setFilteredPlaces([]);
+      return;
+    }
+
+    const lowercasedText = text.toLowerCase();
+    const results = allPlaces.filter(place =>
+      (place.title && place.title.toLowerCase().includes(lowercasedText)) ||
+      (place.description && place.description.toLowerCase().includes(lowercasedText))
+    );
+    setFilteredPlaces(results);
+  };
+
   return (
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.container}>
-        <Text style={styles.title}>Locais Favoritos</Text>
+        <Text style={styles.title}>Serviços de Busca</Text>
 
-        {favoritePlaces.length === 0 ? (
-          <Text style={styles.noFavoritesText}>Nenhum local favoritado ainda.</Text>
+        <TextInput
+          style={styles.searchInput}
+          placeholder="Buscar por título ou descrição..."
+          value={searchText}
+          onChangeText={handleSearch}
+          clearButtonMode="while-editing"
+        />
+
+        {searchText.trim() !== '' && filteredPlaces.length === 0 ? (
+          <Text style={styles.noResultsText}>Nenhum resultado encontrado.</Text>
         ) : (
           <FlatList
-            data={favoritePlaces}
+            data={filteredPlaces}
             keyExtractor={(item, index) => item.title + index + item.coordinate.latitude}
             renderItem={({ item }) => (
-              <TouchableOpacity style={styles.favoriteItem} onPress={() => onPlacePress(item)}>
+              <TouchableOpacity style={styles.searchItem} onPress={() => onPlacePress(item)}>
                 <View style={styles.placeInfo}>
                   <Text style={styles.placeTitle}>{item.title}</Text>
                   {item.description && (
@@ -41,13 +67,9 @@ export const Favorites = ({ favoritePlaces, onPlacePress, onToggleFavorite }: Fa
                     Lat: {item.coordinate.latitude.toFixed(4)}, Lon: {item.coordinate.longitude.toFixed(4)}
                   </Text>
                 </View>
-                <TouchableOpacity style={styles.favoriteButton} onPress={() => onToggleFavorite(item.title)}>
-                  <Icon
-                    name={item.isFavorite ? 'bookmark' : 'bookmark-outline'}
-                    size={24}
-                    color={item.isFavorite ? 'gold' : 'gray'}
-                  />
-                </TouchableOpacity>
+                {item.isFavorite && (
+                  <Icon name="bookmark" size={20} color="gold" style={styles.favoriteIcon} />
+                )}
               </TouchableOpacity>
             )}
           />
@@ -77,13 +99,22 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: '#ccc',
   },
-  noFavoritesText: {
+  searchInput: {
+    borderWidth: 1,
+    borderColor: '#ccc',
+    borderRadius: 8,
+    padding: 12,
+    marginBottom: 15,
+    fontSize: 16,
+    backgroundColor: '#fff',
+  },
+  noResultsText: {
     textAlign: 'center',
-    marginTop: 50,
+    marginTop: 20,
     fontSize: 16,
     color: '#666',
   },
-  favoriteItem: {
+  searchItem: {
     backgroundColor: '#fff',
     padding: 15,
     borderRadius: 10,
@@ -119,7 +150,7 @@ const styles = StyleSheet.create({
     color: '#888',
     textAlign: 'right',
   },
-  favoriteButton: {
-    padding: 5,
+  favoriteIcon: {
+    marginLeft: 10,
   },
 });

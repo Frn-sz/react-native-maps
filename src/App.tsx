@@ -1,12 +1,13 @@
 import { StyleSheet } from 'react-native';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { TabBar } from './components/Tab';
 
 export default function App() {
   return (
-    <>
+    <SafeAreaProvider>
       <TabBar></TabBar>
-    </>
+    </SafeAreaProvider>
   );
 }
 
