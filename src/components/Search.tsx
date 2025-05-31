@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 
+import * as Speech from 'expo-speech';
 import {
   FlatList,
   SafeAreaView,
@@ -13,12 +14,12 @@ import Icon from 'react-native-vector-icons/Ionicons';
 
 import { MarkerInfo } from '../interfaces/Marker';
 
-interface SearchProps {
+interface SearchProps { // Renamed interface
   allPlaces: MarkerInfo[];
   onPlacePress: (place: MarkerInfo) => void;
 }
 
-export const Search = ({ allPlaces, onPlacePress }: SearchProps) => {
+export const Search = ({ allPlaces, onPlacePress }: SearchProps) => { // Renamed component
   const [searchText, setSearchText] = useState('');
   const [filteredPlaces, setFilteredPlaces] = useState<MarkerInfo[]>([]);
 
@@ -37,10 +38,20 @@ export const Search = ({ allPlaces, onPlacePress }: SearchProps) => {
     setFilteredPlaces(results);
   };
 
+  const speakDescription = (text: string | undefined) => {
+    if (text) {
+      Speech.speak(text, {
+        language: 'pt-BR',
+        pitch: 1.0,
+        rate: 1.0,
+      });
+    }
+  };
+
   return (
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.container}>
-        <Text style={styles.title}>Serviços de Busca</Text>
+        <Text style={styles.title}>Buscar Locais</Text>
 
         <TextInput
           style={styles.searchInput}
@@ -67,9 +78,14 @@ export const Search = ({ allPlaces, onPlacePress }: SearchProps) => {
                     Lat: {item.coordinate.latitude.toFixed(4)}, Lon: {item.coordinate.longitude.toFixed(4)}
                   </Text>
                 </View>
-                {item.isFavorite && (
-                  <Icon name="bookmark" size={20} color="gold" style={styles.favoriteIcon} />
-                )}
+                <View style={styles.actionsContainer}>
+                  <TouchableOpacity style={styles.speakButton} onPress={() => speakDescription(item.description || item.title)}>
+                    <Icon name="volume-high-outline" size={24} color="purple" />
+                  </TouchableOpacity>
+                  {item.isFavorite && (
+                    <Icon name="bookmark" size={20} color="gold" style={styles.favoriteIcon} />
+                  )}
+                </View>
               </TouchableOpacity>
             )}
           />
@@ -86,9 +102,9 @@ const styles = StyleSheet.create({
   },
   container: {
     flex: 1,
-    paddingVertical: 50,
     paddingHorizontal: 15,
     backgroundColor: '#f0f0f0',
+    paddingVertical: 50,
   },
   title: {
     fontSize: 22,
@@ -149,6 +165,14 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#888',
     textAlign: 'right',
+  },
+  actionsContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  speakButton: {
+    padding: 5,
+    marginRight: 10,
   },
   favoriteIcon: {
     marginLeft: 10,

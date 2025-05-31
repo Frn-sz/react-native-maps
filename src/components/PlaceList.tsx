@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 
+import * as Speech from 'expo-speech';
 import {
     Button,
     FlatList,
@@ -29,6 +30,16 @@ export const PlaceList = ({ places, onAddPlace, onPlacePress, onToggleFavorite }
         setShowForm(false);
     };
 
+    const speakDescription = (text: string | undefined) => {
+        if (text) {
+            Speech.speak(text, {
+                language: 'pt-BR',
+                pitch: 1.0,
+                rate: 1.0,
+            });
+        }
+    };
+
     return (
         <View style={styles.container}>
             <View style={styles.header}>
@@ -53,13 +64,18 @@ export const PlaceList = ({ places, onAddPlace, onPlacePress, onToggleFavorite }
                                     Lat: {item.coordinate.latitude.toFixed(4)}, Lon: {item.coordinate.longitude.toFixed(4)}
                                 </Text>
                             </View>
-                            <TouchableOpacity style={styles.favoriteButton} onPress={() => onToggleFavorite(item.title)}>
-                                <Icon
-                                    name={item.isFavorite ? 'bookmark' : 'bookmark-outline'}
-                                    size={24}
-                                    color={item.isFavorite ? 'gold' : 'gray'}
-                                />
-                            </TouchableOpacity>
+                            <View style={styles.actionsContainer}>
+                                <TouchableOpacity style={styles.speakButton} onPress={() => speakDescription(item.description || item.title)}>
+                                    <Icon name="volume-high-outline" size={24} color="purple" />
+                                </TouchableOpacity>
+                                <TouchableOpacity style={styles.favoriteButton} onPress={() => onToggleFavorite(item.title)}>
+                                    <Icon
+                                        name={item.isFavorite ? 'bookmark' : 'bookmark-outline'}
+                                        size={24}
+                                        color={item.isFavorite ? 'gold' : 'gray'}
+                                    />
+                                </TouchableOpacity>
+                            </View>
                         </TouchableOpacity>
                     )}
                 />
@@ -83,9 +99,9 @@ export const PlaceList = ({ places, onAddPlace, onPlacePress, onToggleFavorite }
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        paddingVertical: 50,
         paddingHorizontal: 15,
         backgroundColor: '#f0f0f0',
+        paddingVertical: 50,
     },
     header: {
         flexDirection: 'row',
@@ -142,6 +158,14 @@ const styles = StyleSheet.create({
         fontSize: 12,
         color: '#888',
         textAlign: 'right',
+    },
+    actionsContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+    },
+    speakButton: {
+        padding: 5,
+        marginRight: 10,
     },
     favoriteButton: {
         padding: 5,

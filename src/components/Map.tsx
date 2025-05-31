@@ -12,13 +12,20 @@ import Icon from 'react-native-vector-icons/Ionicons';
 
 import { MarkerInfo } from '../interfaces/Marker';
 
+const defaultMarker: MarkerInfo = {
+  coordinate: { latitude: -31.33202828209838, longitude: -54.071768758918644 },
+  description: "Instituto Federal de Ciência e Tecnologia - Campus Bagé",
+  title: "IFSUL Bagé",
+  isFavorite: true,
+};
+
 interface MapProps {
   extraMarkers?: MarkerInfo[];
   initialRegion?: Region;
 }
 
 export const Map = ({ extraMarkers = [], initialRegion }: MapProps) => {
-  const allMarkers: MarkerInfo[] = [...extraMarkers];
+  const allMarkers: MarkerInfo[] = [defaultMarker, ...extraMarkers];
 
   const defaultInitialRegion: Region = {
     latitude: -31.331964682774906,
@@ -57,6 +64,7 @@ const styles = StyleSheet.create({
     flex: 1,
     width: "100%",
     height: "100%",
+    paddingVertical: 50,
   },
   map: {
     width: "100%",

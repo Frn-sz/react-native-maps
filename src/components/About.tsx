@@ -12,9 +12,9 @@ import Icon from 'react-native-vector-icons/Ionicons';
 
 export const About = () => {
   const appVersion = "1.0.0";
-  const developerName = "Fernando";
-  const contactEmail = "fernando@mail.com";
-  const githubLink = "https://github.com/";
+  const developerName = "Empresa...";
+  const contactEmail = "email@example.com";
+  const githubLink = "https://github.com/seu-usuario/seu-repositorio";
 
   const openLink = (url: string) => {
     Linking.openURL(url).catch(err => console.error("Couldn't load page", err));
@@ -73,6 +73,7 @@ const styles = StyleSheet.create({
   },
   container: {
     paddingHorizontal: 20,
+    paddingVertical: 50,
   },
   title: {
     fontSize: 28,

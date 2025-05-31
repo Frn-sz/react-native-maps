@@ -76,7 +76,7 @@ export const TabBar = () => {
               } else if (route.name === "Busca") {
                 iconName = focused ? "search" : "search-outline";
               } else if (route.name === "Sobre") {
-                iconName = focused ? "information" : "information-circle-outline";
+                iconName = focused ? "information-circle" : "information-circle-outline";
               } else {
                 iconName = "help-circle-outline";
               }
