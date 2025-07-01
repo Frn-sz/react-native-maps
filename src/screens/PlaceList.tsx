@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 
 import * as Speech from 'expo-speech';
 import {
+    Alert,
     Button,
     FlatList,
     Modal,
@@ -18,25 +19,60 @@ import { PlaceForm } from './PlaceForm';
 interface PlaceListProps {
     places: MarkerInfo[];
     onAddPlace: (newPlace: MarkerInfo) => void;
+    onUpdatePlace: (place: MarkerInfo) => void;
     onPlacePress: (place: MarkerInfo) => void;
-    onToggleFavorite: (placeId: string) => void;
+    onToggleFavorite: (place: MarkerInfo) => void;
+    onDeletePlace: (place: MarkerInfo) => void;
 }
 
-export const PlaceList = ({ places, onAddPlace, onPlacePress, onToggleFavorite }: PlaceListProps) => {
-    const [showForm, setShowForm] = useState(false);
 
-    const handleFormSubmit = (newPlace: MarkerInfo) => {
-        onAddPlace(newPlace);
-        setShowForm(false);
+
+export const PlaceList = ({ places, onAddPlace, onUpdatePlace, onPlacePress, onToggleFavorite, onDeletePlace }: PlaceListProps) => {
+    const [modalVisivel, toggleModal] = useState(false);
+    const [localSendoEditado, setUpdatingPlace] = useState<MarkerInfo | null>(null);
+
+    const handleDelete = (place: MarkerInfo) => {
+        Alert.alert(
+            "Confirmar Exclusão",
+            `Você tem certeza que deseja excluir o local "${place.title}"?`,
+            [
+                {
+                    text: "Cancelar",
+                    onPress: () => console.log("Exclusão cancelada"),
+                    style: "cancel"
+                },
+                {
+                    text: "Excluir",
+                    onPress: () => onDeletePlace(place),
+                    style: "destructive"
+                }
+            ]
+        );
     };
+
+    const handleFormSubmit = (placeData: MarkerInfo) => {
+        if (placeData.id) {
+            onUpdatePlace(placeData);
+        } else {
+            onAddPlace(placeData);
+        }
+        toggleModal(false);
+    };
+
+    const handleAdd = () => {
+        setUpdatingPlace(null);
+        toggleModal(true);
+    };
+
+    const handleEdit = (place: MarkerInfo) => {
+        setUpdatingPlace(place);
+        toggleModal(true);
+    };
+
 
     const speakDescription = (text: string | undefined) => {
         if (text) {
-            Speech.speak(text, {
-                language: 'pt-BR',
-                pitch: 1.0,
-                rate: 1.0,
-            });
+            Speech.speak(text, { language: 'pt-BR' });
         }
     };
 
@@ -44,7 +80,7 @@ export const PlaceList = ({ places, onAddPlace, onPlacePress, onToggleFavorite }
         <View style={styles.container}>
             <View style={styles.header}>
                 <Text style={styles.title}>Locais Salvos</Text>
-                <Button title="Adicionar Novo Local" onPress={() => setShowForm(true)} />
+                <Button title="Adicionar Novo Local" onPress={handleAdd} />
             </View>
 
             {places.length === 0 ? (
@@ -52,10 +88,10 @@ export const PlaceList = ({ places, onAddPlace, onPlacePress, onToggleFavorite }
             ) : (
                 <FlatList
                     data={places}
-                    keyExtractor={(item, index) => item.title + index + item.coordinate.latitude}
+                    keyExtractor={(item) => item.id!.toString()}
                     renderItem={({ item }) => (
-                        <TouchableOpacity style={styles.placeItem} onPress={() => onPlacePress(item)}>
-                            <View style={styles.placeInfo}>
+                        <View style={styles.placeItem}>
+                            <TouchableOpacity style={styles.placeInfo} onPress={() => onPlacePress(item)}>
                                 <Text style={styles.placeTitle}>{item.title}</Text>
                                 {item.description && (
                                     <Text style={styles.placeDescription}>{item.description}</Text>
@@ -63,12 +99,22 @@ export const PlaceList = ({ places, onAddPlace, onPlacePress, onToggleFavorite }
                                 <Text style={styles.placeCoords}>
                                     Lat: {item.coordinate.latitude.toFixed(4)}, Lon: {item.coordinate.longitude.toFixed(4)}
                                 </Text>
-                            </View>
+                            </TouchableOpacity>
                             <View style={styles.actionsContainer}>
-                                <TouchableOpacity style={styles.speakButton} onPress={() => speakDescription(item.description || item.title)}>
+                                <TouchableOpacity style={styles.actionButton} onPress={() => handleEdit(item)}>
+                                    <Icon name="pencil" size={24} color="#007BFF" />
+                                </TouchableOpacity>
+
+                                <TouchableOpacity style={styles.actionButton} onPress={() => handleDelete(item)}>
+                                    <Icon name="trash-outline" size={24} color="red" />
+                                </TouchableOpacity>
+
+
+                                <TouchableOpacity style={styles.actionButton} onPress={() => speakDescription(item.description || item.title)}>
                                     <Icon name="volume-high-outline" size={24} color="purple" />
                                 </TouchableOpacity>
-                                <TouchableOpacity style={styles.favoriteButton} onPress={() => onToggleFavorite(item.title)}>
+
+                                <TouchableOpacity style={styles.actionButton} onPress={() => onToggleFavorite(item)}>
                                     <Icon
                                         name={item.isFavorite ? 'bookmark' : 'bookmark-outline'}
                                         size={24}
@@ -76,20 +122,21 @@ export const PlaceList = ({ places, onAddPlace, onPlacePress, onToggleFavorite }
                                     />
                                 </TouchableOpacity>
                             </View>
-                        </TouchableOpacity>
+                        </View>
                     )}
                 />
             )}
 
             <Modal
-                visible={showForm}
+                visible={modalVisivel}
                 animationType="slide"
                 presentationStyle="pageSheet"
-                onRequestClose={() => setShowForm(false)}
+                onRequestClose={() => toggleModal(false)}
             >
                 <PlaceForm
-                    onAddPlace={handleFormSubmit}
-                    onCancel={() => setShowForm(false)}
+                    onSubmit={handleFormSubmit}
+                    initialData={localSendoEditado}
+                    onCancel={() => toggleModal(false)}
                 />
             </Modal>
         </View>
@@ -125,7 +172,8 @@ const styles = StyleSheet.create({
     },
     placeItem: {
         backgroundColor: '#fff',
-        padding: 15,
+        paddingVertical: 15,
+        paddingHorizontal: 10,
         borderRadius: 10,
         marginBottom: 10,
         borderWidth: 1,
@@ -141,7 +189,6 @@ const styles = StyleSheet.create({
     },
     placeInfo: {
         flex: 1,
-        marginRight: 10,
     },
     placeTitle: {
         fontSize: 18,
@@ -157,17 +204,14 @@ const styles = StyleSheet.create({
     placeCoords: {
         fontSize: 12,
         color: '#888',
-        textAlign: 'right',
     },
     actionsContainer: {
         flexDirection: 'row',
         alignItems: 'center',
+        paddingLeft: 10,
     },
-    speakButton: {
+    actionButton: {
         padding: 5,
-        marginRight: 10,
-    },
-    favoriteButton: {
-        padding: 5,
+        marginLeft: 10,
     },
 });

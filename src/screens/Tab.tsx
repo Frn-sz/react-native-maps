@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 
 import {
   SafeAreaView,
@@ -15,20 +15,35 @@ import { Favorites } from './Favorites';
 import { Map } from './Map';
 import { PlaceList } from './PlaceList';
 import { Search } from './Search';
+import { Database } from '../db/db';
 
 const Tab = createBottomTabNavigator();
 
 export const TabBar = () => {
-  const [places, setPlaces] = useState<MarkerInfo[]>([{
-    coordinate: { latitude: -31.33202828209838, longitude: -54.071768758918644 },
-    description: "Instituto Federal de Ciência e Tecnologia - Campus Bagé",
-    title: "IFSUL Bagé",
-    isFavorite: true,
-  }]);
+  const [places, setPlaces] = useState<MarkerInfo[]>([]);
   const [mapRegion, setMapRegion] = useState<any | undefined>(undefined);
 
-  const handleAddPlace = (newPlace: MarkerInfo) => {
-    setPlaces(prevPlaces => [...prevPlaces, newPlace]);
+  const loadPlaces = useCallback(async () => {
+    try {
+      const storedPlaces = await Database.getAll();
+      setPlaces(storedPlaces);
+    } catch (error) {
+      console.error("Failed to load places from database", error);
+    }
+  }, []);
+
+  useEffect(() => {
+    async function setupDatabase() {
+      await Database.init();
+      await loadPlaces();
+    }
+    setupDatabase();
+  }, [loadPlaces]);
+
+  const handleAddPlace = async (newPlace: Omit<MarkerInfo, 'id'>) => {
+    await Database.addPlace(newPlace);
+    await loadPlaces();
+
     setMapRegion({
       latitude: newPlace.coordinate.latitude,
       longitude: newPlace.coordinate.longitude,
@@ -36,6 +51,29 @@ export const TabBar = () => {
       longitudeDelta: 0.01,
     });
   };
+
+  const handleUpdatePlace = async (place: MarkerInfo) => {
+    await Database.updatePlace(place);
+    await loadPlaces();
+
+
+    setMapRegion({
+      latitude: place.coordinate.latitude,
+      longitude: place.coordinate.longitude,
+      latitudeDelta: 0.01,
+      longitudeDelta: 0.01,
+    });
+  }
+
+  const handleDeletePlace = async (place: MarkerInfo) => {
+    if (!place.id) {
+      console.error("Não é possível excluir um local sem id");
+      return;
+    };
+
+    await Database.deletePlace(place.id);
+    await loadPlaces();
+  }
 
   const handlePlacePress = (place: MarkerInfo, navigation: any) => {
     setMapRegion({
@@ -47,14 +85,9 @@ export const TabBar = () => {
     navigation.navigate('Mapa');
   };
 
-  const handleToggleFavorite = (placeTitle: string) => {
-    setPlaces(prevPlaces =>
-      prevPlaces.map(place =>
-        place.title === placeTitle
-          ? { ...place, isFavorite: !place.isFavorite }
-          : place
-      )
-    );
+  const handleToggleFavorite = async (placeToToggle: MarkerInfo) => {
+    await Database.toggleFavorite(placeToToggle);
+    await loadPlaces();
   };
 
   const favoritePlaces = places.filter(place => place.isFavorite);
@@ -89,20 +122,20 @@ export const TabBar = () => {
           })}
         >
           <Tab.Screen name="Mapa">
-            {() => <Map extraMarkers={places} initialRegion={mapRegion} />}
+            {() => <Map markers={places} initialRegion={mapRegion} />}
           </Tab.Screen>
-
           <Tab.Screen name="Locais">
             {({ navigation }) => (
               <PlaceList
                 places={places}
                 onAddPlace={handleAddPlace}
+                onUpdatePlace={handleUpdatePlace}
                 onPlacePress={(place) => handlePlacePress(place, navigation)}
                 onToggleFavorite={handleToggleFavorite}
+                onDeletePlace={handleDeletePlace}
               />
             )}
           </Tab.Screen>
-
           <Tab.Screen name="Favoritos">
             {({ navigation }) => (
               <Favorites

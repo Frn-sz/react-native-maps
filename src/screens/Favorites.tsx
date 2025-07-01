@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 
 import * as Speech from 'expo-speech';
 import {
@@ -6,7 +6,6 @@ import {
   SafeAreaView,
   StyleSheet,
   Text,
-  TextInput,
   TouchableOpacity,
   View,
 } from 'react-native';
@@ -14,29 +13,13 @@ import Icon from 'react-native-vector-icons/Ionicons';
 
 import { MarkerInfo } from '../interfaces/Marker';
 
-interface SearchProps { // Renamed interface
-  allPlaces: MarkerInfo[];
+interface FavoritesProps {
+  favoritePlaces: MarkerInfo[];
   onPlacePress: (place: MarkerInfo) => void;
+  onToggleFavorite: (placeId: MarkerInfo) => void;
 }
 
-export const Search = ({ allPlaces, onPlacePress }: SearchProps) => { // Renamed component
-  const [searchText, setSearchText] = useState('');
-  const [filteredPlaces, setFilteredPlaces] = useState<MarkerInfo[]>([]);
-
-  const handleSearch = (text: string) => {
-    setSearchText(text);
-    if (text.trim() === '') {
-      setFilteredPlaces([]);
-      return;
-    }
-
-    const lowercasedText = text.toLowerCase();
-    const results = allPlaces.filter(place =>
-      (place.title && place.title.toLowerCase().includes(lowercasedText)) ||
-      (place.description && place.description.toLowerCase().includes(lowercasedText))
-    );
-    setFilteredPlaces(results);
-  };
+export const Favorites = ({ favoritePlaces, onPlacePress, onToggleFavorite }: FavoritesProps) => {
 
   const speakDescription = (text: string | undefined) => {
     if (text) {
@@ -51,24 +34,16 @@ export const Search = ({ allPlaces, onPlacePress }: SearchProps) => { // Renamed
   return (
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.container}>
-        <Text style={styles.title}>Buscar Locais</Text>
+        <Text style={styles.title}>Locais Favoritos</Text>
 
-        <TextInput
-          style={styles.searchInput}
-          placeholder="Buscar por título ou descrição..."
-          value={searchText}
-          onChangeText={handleSearch}
-          clearButtonMode="while-editing"
-        />
-
-        {searchText.trim() !== '' && filteredPlaces.length === 0 ? (
-          <Text style={styles.noResultsText}>Nenhum resultado encontrado.</Text>
+        {favoritePlaces.length === 0 ? (
+          <Text style={styles.noFavoritesText}>Nenhum local favoritado ainda.</Text>
         ) : (
           <FlatList
-            data={filteredPlaces}
+            data={favoritePlaces}
             keyExtractor={(item, index) => item.title + index + item.coordinate.latitude}
             renderItem={({ item }) => (
-              <TouchableOpacity style={styles.searchItem} onPress={() => onPlacePress(item)}>
+              <TouchableOpacity style={styles.favoriteItem} onPress={() => onPlacePress(item)}>
                 <View style={styles.placeInfo}>
                   <Text style={styles.placeTitle}>{item.title}</Text>
                   {item.description && (
@@ -82,9 +57,13 @@ export const Search = ({ allPlaces, onPlacePress }: SearchProps) => { // Renamed
                   <TouchableOpacity style={styles.speakButton} onPress={() => speakDescription(item.description || item.title)}>
                     <Icon name="volume-high-outline" size={24} color="purple" />
                   </TouchableOpacity>
-                  {item.isFavorite && (
-                    <Icon name="bookmark" size={20} color="gold" style={styles.favoriteIcon} />
-                  )}
+                  <TouchableOpacity style={styles.favoriteButton} onPress={() => onToggleFavorite(item)}>
+                    <Icon
+                      name={item.isFavorite ? 'bookmark' : 'bookmark-outline'}
+                      size={24}
+                      color={item.isFavorite ? 'gold' : 'gray'}
+                    />
+                  </TouchableOpacity>
                 </View>
               </TouchableOpacity>
             )}
@@ -115,22 +94,13 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: '#ccc',
   },
-  searchInput: {
-    borderWidth: 1,
-    borderColor: '#ccc',
-    borderRadius: 8,
-    padding: 12,
-    marginBottom: 15,
-    fontSize: 16,
-    backgroundColor: '#fff',
-  },
-  noResultsText: {
+  noFavoritesText: {
     textAlign: 'center',
-    marginTop: 20,
+    marginTop: 50,
     fontSize: 16,
     color: '#666',
   },
-  searchItem: {
+  favoriteItem: {
     backgroundColor: '#fff',
     padding: 15,
     borderRadius: 10,
@@ -174,7 +144,7 @@ const styles = StyleSheet.create({
     padding: 5,
     marginRight: 10,
   },
-  favoriteIcon: {
-    marginLeft: 10,
+  favoriteButton: {
+    padding: 5,
   },
 });

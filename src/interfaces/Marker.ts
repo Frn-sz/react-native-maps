@@ -1,4 +1,5 @@
 export interface MarkerInfo {
+  id?: number,
   coordinate: Coordinate;
   title: string;
   description: string | undefined;

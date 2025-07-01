@@ -1,5 +1,4 @@
-import React, { useState } from 'react';
-
+import React, { useState, useEffect } from 'react';
 import {
     Alert,
     Button,
@@ -11,19 +10,36 @@ import {
     TextInput,
     View,
 } from 'react-native';
-
 import { MarkerInfo } from '../interfaces/Marker';
 
 interface PlaceFormProps {
-    onAddPlace: (newPlace: MarkerInfo) => void;
+    onSubmit: (place: MarkerInfo) => void;
     onCancel: () => void;
+    initialData?: MarkerInfo | null;
 }
 
-export const PlaceForm = ({ onAddPlace, onCancel }: PlaceFormProps) => {
-    const [title, setTitle] = useState<string>('');
-    const [description, setDescription] = useState<string>('');
-    const [latitude, setLatitude] = useState<string>('');
-    const [longitude, setLongitude] = useState<string>('');
+export const PlaceForm = ({ onSubmit, onCancel, initialData }: PlaceFormProps) => {
+    const [title, setTitle] = useState('');
+    const [description, setDescription] = useState('');
+    const [latitude, setLatitude] = useState('');
+    const [longitude, setLongitude] = useState('');
+
+    const isEditing = !!initialData;
+
+    useEffect(() => {
+        if (isEditing) {
+            setTitle(initialData.title ?? '');
+            setDescription(initialData.description ?? '');
+            setLatitude(String(initialData.coordinate.latitude));
+            setLongitude(String(initialData.coordinate.longitude));
+        } else {
+            setTitle('');
+            setDescription('');
+            setLatitude('');
+            setLongitude('');
+        }
+    }, [initialData, isEditing]);
+
 
     const handleSubmit = () => {
         if (!title.trim() || !latitude.trim() || !longitude.trim()) {
@@ -39,20 +55,18 @@ export const PlaceForm = ({ onAddPlace, onCancel }: PlaceFormProps) => {
             return;
         }
 
-        const newPlace: MarkerInfo = {
+        const placeData: MarkerInfo = {
+            id: initialData?.id,
             coordinate: {
                 latitude: latNum,
                 longitude: lonNum,
             },
             title: title.trim(),
             description: description.trim() === '' ? undefined : description.trim(),
+            isFavorite: initialData?.isFavorite ?? false,
         };
 
-        onAddPlace(newPlace);
-        setTitle('');
-        setDescription('');
-        setLatitude('');
-        setLongitude('');
+        onSubmit(placeData);
     };
 
     return (
@@ -61,7 +75,9 @@ export const PlaceForm = ({ onAddPlace, onCancel }: PlaceFormProps) => {
             behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         >
             <ScrollView contentContainerStyle={styles.scrollContent}>
-                <Text style={styles.heading}>Cadastrar Novo Local</Text>
+                <Text style={styles.heading}>
+                    {isEditing ? 'Editar Local' : 'Cadastrar Novo Local'}
+                </Text>
 
                 <Text style={styles.label}>Título:</Text>
                 <TextInput
@@ -99,7 +115,7 @@ export const PlaceForm = ({ onAddPlace, onCancel }: PlaceFormProps) => {
                 />
 
                 <View style={styles.buttonContainer}>
-                    <Button title="Salvar Local" onPress={handleSubmit} />
+                    <Button title={isEditing ? "Salvar Alterações" : "Salvar Local"} onPress={handleSubmit} />
                     <Button title="Cancelar" onPress={onCancel} color="red" />
                 </View>
             </ScrollView>
