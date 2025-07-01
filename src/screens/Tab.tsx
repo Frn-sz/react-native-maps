@@ -15,6 +15,7 @@ import { Favorites } from './Favorites';
 import { Map } from './Map';
 import { PlaceList } from './PlaceList';
 import { Search } from './Search';
+import { PlaceService } from '../db/PlaceService';
 import { Database } from '../db/db';
 
 const Tab = createBottomTabNavigator();
@@ -25,7 +26,7 @@ export const TabBar = () => {
 
   const loadPlaces = useCallback(async () => {
     try {
-      const storedPlaces = await Database.getAll();
+      const storedPlaces = await PlaceService.getAll();
       setPlaces(storedPlaces);
     } catch (error) {
       console.error("Failed to load places from database", error);
@@ -41,7 +42,7 @@ export const TabBar = () => {
   }, [loadPlaces]);
 
   const handleAddPlace = async (newPlace: Omit<MarkerInfo, 'id'>) => {
-    await Database.addPlace(newPlace);
+    await PlaceService.addPlace(newPlace);
     await loadPlaces();
 
     setMapRegion({
@@ -53,7 +54,7 @@ export const TabBar = () => {
   };
 
   const handleUpdatePlace = async (place: MarkerInfo) => {
-    await Database.updatePlace(place);
+    await PlaceService.updatePlace(place);
     await loadPlaces();
 
 
@@ -71,7 +72,7 @@ export const TabBar = () => {
       return;
     };
 
-    await Database.deletePlace(place.id);
+    await PlaceService.deletePlace(place.id);
     await loadPlaces();
   }
 
@@ -86,7 +87,7 @@ export const TabBar = () => {
   };
 
   const handleToggleFavorite = async (placeToToggle: MarkerInfo) => {
-    await Database.toggleFavorite(placeToToggle);
+    await PlaceService.toggleFavorite(placeToToggle);
     await loadPlaces();
   };
 
